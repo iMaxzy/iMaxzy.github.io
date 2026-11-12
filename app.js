@@ -1,4 +1,4 @@
-// Interactions: viewer (images, video, 3D), video hover preview, hero pointer drift, one-time reveals, nav highlight.
+// Interactions: work index with live preview, viewer (images, video, 3D), one-time reveals, nav + side rail highlight, copy email.
 const data = JSON.parse(document.getElementById('data').textContent);
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const hoverOK = matchMedia('(hover: hover) and (pointer: fine)').matches;
@@ -20,15 +20,14 @@ function show(dir = 0) {
   const el = media(items[i], i);
   if (dir && !reduce) el.classList.add(dir > 0 ? 'in-right' : 'in-left');
   stage.replaceChildren(el);
-  const multi = items.length > 1;
-  prev.hidden = next.hidden = !multi;
+  prev.hidden = next.hidden = items.length < 2;
   strip.querySelectorAll('button').forEach((b, k) => b.setAttribute('aria-current', k === i));
 }
 function step(d) { i = (i + d + items.length) % items.length; show(d); }
 function go(k) { const d = k - i; i = k; show(d); }
 
-document.querySelectorAll('.tile').forEach(t => t.addEventListener('click', () => {
-  const p = data[t.dataset.key];
+function openProject(key) {
+  const p = data[key];
   items = p.items; i = 0; title = p.title;
   dlg.querySelector('h3').textContent = p.title;
   dlg.querySelector('.cap p').textContent = p.desc;
@@ -41,7 +40,7 @@ document.querySelectorAll('.tile').forEach(t => t.addEventListener('click', () =
   }) : []));
   show();
   dlg.showModal();
-}));
+}
 prev.addEventListener('click', () => step(-1));
 next.addEventListener('click', () => step(1));
 dlg.addEventListener('keydown', e => {
@@ -52,8 +51,7 @@ dlg.addEventListener('keydown', e => {
 // Close on X or on a click outside the box; clearing the stage stops any playing video.
 dlg.addEventListener('click', e => { if (e.target === dlg || e.target.hasAttribute('data-close')) dlg.close(); });
 dlg.addEventListener('close', () => stage.replaceChildren());
-// Swipe on touch: a quick horizontal drag moves between images.
-let sx = null;
+let sx = null; // swipe on touch
 stage.addEventListener('pointerdown', e => { if (e.pointerType === 'touch') sx = e.clientX; });
 stage.addEventListener('pointerup', e => {
   if (sx === null || items.length < 2) return;
@@ -61,62 +59,64 @@ stage.addEventListener('pointerup', e => {
   if (Math.abs(dx) > 50) step(dx < 0 ? 1 : -1);
 });
 
-/* ---------- video preview on hover (desktop only) ---------- */
-if (hoverOK && !reduce) {
-  document.querySelectorAll('.tile[data-preview]').forEach(t => {
-    const frame = t.querySelector('.frame');
-    let v;
-    const start = () => {
-      if (v) return;
-      v = Object.assign(document.createElement('video'), { src: t.dataset.preview, muted: true, loop: true, playsInline: true, className: 'preview' });
-      frame.append(v);
-      v.play().catch(() => {});
-    };
-    const stop = () => { v?.remove(); v = null; };
-    t.addEventListener('pointerenter', start);
-    t.addEventListener('pointerleave', stop);
-    t.addEventListener('focus', start);
-    t.addEventListener('blur', stop);
+/* ---------- work index: hover/focus a row, the preview on the right follows ---------- */
+document.querySelectorAll('.work').forEach(work => {
+  const rows = [...work.querySelectorAll('.row')];
+  const frame = work.querySelector('.pv-frame');
+  const img = frame.querySelector('img');
+  const cap = work.querySelector('figcaption');
+  let vid = null;
+  function aim(row) {
+    const p = data[row.dataset.key];
+    rows.forEach(r => r.classList.toggle('on', r === row));
+    if (img.getAttribute('src') !== p.thumb) img.src = p.thumb;
+    cap.innerHTML = '';
+    const t = document.createElement('span'); t.className = 'cap-t'; t.textContent = p.title;
+    cap.append(t, `${p.label}. ${p.desc}`);
+    vid?.remove(); vid = null;
+    if (row.dataset.preview && hoverOK && !reduce) {
+      vid = Object.assign(document.createElement('video'), { src: row.dataset.preview, muted: true, loop: true, playsInline: true });
+      frame.append(vid);
+      vid.play().catch(() => {});
+    }
+  }
+  rows.forEach(r => {
+    r.addEventListener('click', () => openProject(r.dataset.key));
+    if (hoverOK) { r.addEventListener('pointerenter', () => aim(r)); }
+    r.addEventListener('focus', () => aim(r));
   });
-}
+  aim(rows[0]);
+  rows[0].classList.remove('on');
+});
 
-/* ---------- hero: image drifts toward the pointer with a soft spring ---------- */
-const hero = document.querySelector('.hero-img');
-if (hero && hoverOK && !reduce) {
-  const img = hero.querySelector('img');
-  let tx = 0, ty = 0, x = 0, y = 0, raf = 0;
-  const tick = () => {
-    x += (tx - x) * 0.08; y += (ty - y) * 0.08;
-    img.style.transform = `translate(${x.toFixed(2)}px, ${y.toFixed(2)}px) scale(1.03)`;
-    raf = Math.abs(tx - x) + Math.abs(ty - y) > 0.05 ? requestAnimationFrame(tick) : 0;
-  };
-  const aim = () => { raf ||= requestAnimationFrame(tick); };
-  document.querySelector('.hero').addEventListener('pointermove', e => {
-    const r = hero.getBoundingClientRect();
-    tx = ((e.clientX - r.left) / r.width - 0.5) * -18;
-    ty = ((e.clientY - r.top) / r.height - 0.5) * -18;
-    aim();
-  });
-  document.querySelector('.hero').addEventListener('pointerleave', () => { tx = ty = 0; aim(); });
-}
+/* ---------- copy email ---------- */
+const copy = document.getElementById('copy');
+copy?.addEventListener('click', async () => {
+  try { await navigator.clipboard.writeText('maxmasocol@gmail.com'); copy.textContent = 'Copied'; }
+  catch { copy.textContent = 'maxmasocol@gmail.com'; }
+  setTimeout(() => { copy.textContent = 'Copy email'; }, 2000);
+});
 
 /* ---------- one-time reveals (content stays visible without JS or with reduced motion) ---------- */
 if (!reduce && 'IntersectionObserver' in window) {
-  const targets = document.querySelectorAll('.sec h2, .grid > li, .about > *, .contact > *');
+  const targets = document.querySelectorAll('.head, .list li, .about-photo, .about > div > *:not(.head), .contact > *:not(.head)');
   targets.forEach(el => el.classList.add('reveal'));
   const io = new IntersectionObserver(entries => {
-    const fresh = entries.filter(e => e.isIntersecting);
-    fresh.forEach((e, k) => { e.target.style.transitionDelay = `${Math.min(k, 5) * 45}ms`; e.target.classList.add('seen'); io.unobserve(e.target); });
+    entries.filter(e => e.isIntersecting).forEach((e, k) => {
+      e.target.style.transitionDelay = `${Math.min(k, 5) * 45}ms`;
+      e.target.classList.add('seen'); io.unobserve(e.target);
+    });
   }, { rootMargin: '0px 0px -8% 0px', threshold: 0.05 });
   targets.forEach(el => io.observe(el));
 }
 
-/* ---------- nav: highlight the section in view ---------- */
-const links = [...document.querySelectorAll('nav a')];
+/* ---------- nav and side rail: highlight the section in view ---------- */
+const links = [...document.querySelectorAll('nav a, .rail a')];
 const spy = new IntersectionObserver(entries => {
   entries.forEach(e => {
     if (!e.isIntersecting) return;
-    links.forEach(a => a.classList.toggle('on', a.getAttribute('href') === '#' + e.target.id));
+    const id = e.target.id === 'home' ? 'top' : e.target.id;
+    links.forEach(a => a.classList.toggle('on', a.getAttribute('href') === '#' + id));
   });
 }, { rootMargin: '-45% 0px -50% 0px' });
 document.querySelectorAll('main section[id]').forEach(s => spy.observe(s));
