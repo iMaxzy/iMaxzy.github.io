@@ -89,9 +89,9 @@ document.querySelectorAll('.work').forEach(work => {
   rows[0].classList.remove('on');
 });
 
-/* ---------- hero glass video: still frame for reduced motion ---------- */
-const glass = document.querySelector('.glass video');
-if (glass && reduce) { glass.removeAttribute('autoplay'); glass.pause(); }
+/* ---------- header and rail switch colors while the dark hero is on screen ---------- */
+const heroEl = document.getElementById('home');
+new IntersectionObserver(([e]) => document.body.classList.toggle('hero-dark', e.isIntersecting), { rootMargin: '-64px 0px 0px 0px' }).observe(heroEl);
 
 /* ---------- copy email ---------- */
 const copy = document.getElementById('copy');
