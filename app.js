@@ -89,6 +89,10 @@ document.querySelectorAll('.work').forEach(work => {
   rows[0].classList.remove('on');
 });
 
+/* ---------- hero glass video: still frame for reduced motion ---------- */
+const glass = document.querySelector('.glass video');
+if (glass && reduce) { glass.removeAttribute('autoplay'); glass.pause(); }
+
 /* ---------- copy email ---------- */
 const copy = document.getElementById('copy');
 copy?.addEventListener('click', async () => {

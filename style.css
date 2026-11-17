@@ -50,9 +50,8 @@ nav a:hover, nav a.on { background-size: 100% 2px; }
 /* hero */
 .hero { min-height: 100svh; padding: 88px 0 40px; display: grid; }
 .hero-in { position: relative; display: grid; grid-template-rows: 1fr auto auto; gap: 20px; }
-.stage3d { position: relative; justify-self: center; mix-blend-mode: multiply; width: min(58vw, 760px); min-height: 0; overflow: hidden; align-self: stretch; }
-.stage3d iframe { position: absolute; left: -6%; top: -6%; width: 112%; height: 112%; border: 0; background: #fff; }
-.hint { position: absolute; left: 0; top: 0; color: var(--muted); }
+.glass { position: relative; justify-self: center; width: min(58vw, 760px); min-height: 0; align-self: stretch; -webkit-mask-image: radial-gradient(closest-side, #000 82%, transparent 100%); mask-image: radial-gradient(closest-side, #000 82%, transparent 100%); }
+.glass video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
 h1 { position: relative; z-index: 2; pointer-events: none; font-size: min(17.5vw, 15rem); font-weight: 800; letter-spacing: -.01em; line-height: .8; display: flex; justify-content: space-between; margin-top: -.34em; white-space: nowrap; }
 .sp { width: .18em; }
 .hero-foot { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 40px; align-items: end; }
@@ -126,7 +125,7 @@ dialog::backdrop { background: rgba(20, 20, 20, .72); }
 /* motion (only for visitors who have not asked for less) */
 @media (prefers-reduced-motion: no-preference) {
   .ch { display: inline-block; animation: rise .9s var(--ease) both; animation-delay: calc(var(--i) * 45ms + 100ms); }
-  .hero-foot > *, .stage3d { animation: fade .8s var(--ease) both; animation-delay: .5s; }
+  .hero-foot > *, .glass { animation: fade .8s var(--ease) both; animation-delay: .5s; }
   @keyframes rise { from { opacity: 0; transform: translateY(40%); } }
   @keyframes fade { from { opacity: 0; } }
   .js .reveal:not(.seen) { opacity: 0; transform: translateY(12px); }
@@ -141,7 +140,6 @@ dialog::backdrop { background: rgba(20, 20, 20, .72); }
   @keyframes slide-l { from { opacity: 0; transform: translateX(-24px); } }
 }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } .row, .row::after { transition: none; } }
-@media (hover: none) { .stage3d iframe { pointer-events: none; } .hint { display: none; } }
 
 /* tablet and phone */
 @media (max-width: 960px) {
@@ -158,7 +156,7 @@ dialog::backdrop { background: rgba(20, 20, 20, .72); }
   .facts div { grid-template-columns: 1fr; gap: 2px; }
   .hero-foot { grid-template-columns: 1fr; }
   .hero-foot .actions { justify-content: flex-start; margin-top: 12px; }
-  .stage3d { width: 88vw; min-height: 46vh; }
+  .glass { width: 88vw; min-height: 46vh; }
 }
 @media (max-width: 560px) {
   .wrap { width: min(1280px, 100% - 32px); }
@@ -170,4 +168,3 @@ dialog::backdrop { background: rgba(20, 20, 20, .72); }
   .head { flex-direction: column; gap: 6px; margin-bottom: 32px; }
   .nav { display: none; }
 }
-@media (max-width: 960px) { .stage3d iframe { left: -12%; top: -12%; width: 124%; height: 124%; } }
